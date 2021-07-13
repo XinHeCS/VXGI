@@ -29,6 +29,9 @@ public class CameraRenderer
         _camera = camera;
 
         // Start rendering process
+#if UNITY_EDITOR
+        PrepareBuffer();
+#endif
         if (!Cull())
         {
             return;
@@ -80,6 +83,12 @@ public class CameraRenderer
             _context.DrawGizmos(_camera, GizmoSubset.PostImageEffects);
         }
     }
+
+    private void PrepareBuffer()
+    {
+        _commandBuffer.name = _camera.name;
+    }
+    
 #endif
 
     private void Submit()
