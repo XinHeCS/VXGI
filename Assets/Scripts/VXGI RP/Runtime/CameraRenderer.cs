@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
-using UnityEditor.Rendering.LookDev;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -9,8 +8,11 @@ public class CameraRenderer
 {
     const string _commandBufferName = "Render Camera";
 
-    static ShaderTagId VoxelizationShaderTagId = new ShaderTagId("Voxelization");
-    static ShaderTagId UnlitShaderTagId = new ShaderTagId("SRPDefaultUnlit");
+    private static ShaderTagId[] _shaderTagIdList = new ShaderTagId[]
+    {
+        new ShaderTagId("Voxelization"),
+        new ShaderTagId("SRPDefaultUnlit")
+    };
     
     ScriptableRenderContext _context;
 
@@ -57,20 +59,34 @@ public class CameraRenderer
     private void SetUp()
     {
         _context.SetupCameraProperties(_camera);
-        _commandBuffer.ClearRenderTarget(true, true, Color.clear);
+        _commandBuffer.ClearRenderTarget(
+            true, 
+            (CameraClearFlags.SolidColor == _camera.clearFlags), 
+            _camera.backgroundColor.linear);
         _commandBuffer.BeginSample(_commandBufferName);
         ExecuteCommandBuffer();
     }
 
-    private void DrawVisibleGeometry()
+    private DrawingSettings CreateDrawSettings()
     {
         var sortSetting = new SortingSettings(_camera);
-        var drawSetting = new DrawingSettings(
-            UnlitShaderTagId, sortSetting
-            );
+        var settings = new DrawingSettings(
+            _shaderTagIdList[0], sortSetting
+        );
+        for (int i = 1; i < _shaderTagIdList.Length; i++)
+        {
+            settings.SetShaderPassName(i, _shaderTagIdList[i]);
+        }
+
+        return settings;  
+    }
+
+    private void DrawVisibleGeometry()
+    {
+        var drawSetting = CreateDrawSettings();
         var filterSetting = new FilteringSettings(RenderQueueRange.all);
         _context.DrawRenderers(_cullingResults, ref drawSetting, ref filterSetting);
-        
+
         _context.DrawSkybox(_camera);
     }
 

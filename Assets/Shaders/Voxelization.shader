@@ -13,6 +13,7 @@ Shader "Unlit/Voxelization"
         // Calculate voxel data
         Pass
         {
+            Tags {"LightMode" = "Voxelization"}
             cull off
             zwrite off
             colorMask 0
