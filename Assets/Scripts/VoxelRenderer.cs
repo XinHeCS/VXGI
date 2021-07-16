@@ -38,11 +38,6 @@ public class VoxelRenderer : MonoBehaviour
         _voxelization.AddVoxelObjects(this);
     }
 
-    private void Update()
-    {
-        EnableDebugColor(_showDebugVoxelColor);
-    }
-
     public Bounds GetAABB()
     {
         return _meshRenderer.bounds;
@@ -62,20 +57,5 @@ public class VoxelRenderer : MonoBehaviour
         {
             return _meshRenderer.sharedMaterial;
         }
-    }
-
-    private void EnableDebugColor(bool enable)
-    {
-        var material = _meshRenderer.sharedMaterial;
-        if (enable)
-        {
-            material.EnableKeyword("VOXEL_MESH");
-        }
-        else
-        {
-            material.DisableKeyword("VOXEL_MESH");
-        }
-
-        _meshRenderer.sharedMaterial = material;
     }
 }

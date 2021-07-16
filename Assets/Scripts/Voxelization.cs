@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Camera))]
@@ -16,6 +17,8 @@ public class Voxelization : MonoBehaviour
     public float _voxelPlaneOffset = 0.2f;
 
     public bool _showVxoelMesh = true;
+    
+    public bool _showDebugVoxelColor = true;
 
     public Material _voxelMaterial;
 
@@ -114,6 +117,11 @@ public class Voxelization : MonoBehaviour
         {
             indices[i] = i;
         }
+
+        if (vertices.Length > 65000)
+        {
+            _vxoelMesh.indexFormat = IndexFormat.UInt32;
+        }
         
         _vxoelMesh.SetVertices(vertices);
         _vxoelMesh.SetIndices(indices, MeshTopology.Points, 0);
@@ -125,6 +133,7 @@ public class Voxelization : MonoBehaviour
         _voxelMaterial.SetVector(_sceneBoundsMinID, _sceneBounds.min);
         _voxelMaterial.SetVector(_resolutionID, _resolution);
         _voxelMaterial.SetFloat(_voxelStepID, _voxelStepX);
+        EnableDebugColor(_showDebugVoxelColor);
         Graphics.DrawMesh(_vxoelMesh, Matrix4x4.identity, _voxelMaterial, LayerMask.NameToLayer("Default"));
     }
 
@@ -257,6 +266,18 @@ public class Voxelization : MonoBehaviour
         Graphics.SetRandomWriteTarget(1, _voxelBuffer,false);
         // var testList = new List<int>(length);  
         // _voxelBuffer.SetData(new List<int>(length));
+    }
+    
+    private void EnableDebugColor(bool enable)
+    {
+        if (enable)
+        {
+            _voxelMaterial.EnableKeyword("VOXEL_MESH");
+        }
+        else
+        {
+            _voxelMaterial.DisableKeyword("VOXEL_MESH");
+        }
     }
 
     private void ReadVoxelBuffer()

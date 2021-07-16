@@ -14,6 +14,7 @@ Shader "Unlit/DrawVoxel"
         {
             CGPROGRAM
             #pragma enable_d3d11_debug_symbols
+            #pragma multi_compile_local _ VOXEL_MESH
             #pragma target 5.0
             #pragma vertex vert
             #pragma geometry geom
@@ -30,12 +31,14 @@ Shader "Unlit/DrawVoxel"
             struct v2g
             {
                 float4 vertex : POSITION;
+                uint3 voxelPos : TEXCOORD1;
                 uint index : TEXCOORD0;
             };
 
             struct g2f
             {
                 float4 vertex : SV_POSITION;
+                uint3 voxelPos : TEXCOORD0;
             };
 
             sampler2D _MainTex;
@@ -61,6 +64,7 @@ Shader "Unlit/DrawVoxel"
                     );
                 float3 startPos = _sceneMinAABB + float3(_step, _step, _step) * 0.5f;
                 o.vertex = float4(boundPos * float3(_step, _step, _step) + startPos, 1);
+                o.voxelPos = boundPos;
                 o.index = v.index;
                 
                 return o;
@@ -111,6 +115,7 @@ Shader "Unlit/DrawVoxel"
                     {
                         g2f o;
                         o.vertex = projectVertex[cubeIndices[4 * face + i]];
+                        o.voxelPos = IN[0].voxelPos;
                         OUT.Append(o);
                     }
                     OUT.RestartStrip();
@@ -118,8 +123,11 @@ Shader "Unlit/DrawVoxel"
                     // Add second triangle
                     g2f v1, v2, v3;
                     v1.vertex = projectVertex[cubeIndices[4 * face + 2]];
+                    v1.voxelPos = IN[0].voxelPos;
                     v2.vertex = projectVertex[cubeIndices[4 * face + 1]];
+                    v2.voxelPos = IN[0].voxelPos;
                     v3.vertex = projectVertex[cubeIndices[4 * face + 3]];
+                    v3.voxelPos = IN[0].voxelPos;
                     OUT.Append(v1);
                     OUT.Append(v2);
                     OUT.Append(v3);
@@ -132,6 +140,14 @@ Shader "Unlit/DrawVoxel"
             {
                 // sample the texture
                 fixed4 col = _Color;
+#ifdef VOXEL_MESH
+                col = fixed4(
+                    float(i.voxelPos.x) / float(_resolution.x),
+                    float(i.voxelPos.y) / float(_resolution.y),
+                    float(i.voxelPos.z) / float(_resolution.z),
+                    1
+                );
+#endif
                 return col;
             }
             ENDCG

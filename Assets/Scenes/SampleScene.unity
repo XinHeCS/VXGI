@@ -123,6 +123,85 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1001 &3298944
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_RootOrder
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.4
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_Name
+      value: dragon
+      objectReference: {fileID: 0}
+    - target: {fileID: 3261972472372342013, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: f7e6d5ce6750bb44ea8af4839659455a, type: 2}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+--- !u!1 &3298945 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -5151492872390713093, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+  m_PrefabInstance: {fileID: 3298944}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &3298946
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3298945}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _showDebugVoxelColor: 1
 --- !u!1 &309206163
 GameObject:
   m_ObjectHideFlags: 0
@@ -227,7 +306,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 309206163}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.3, z: 0}
+  m_LocalPosition: {x: -0.001, y: -1.3, z: 0.553}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -338,6 +417,7 @@ GameObject:
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
   - component: {fileID: 963194229}
+  - component: {fileID: 963194230}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -362,7 +442,7 @@ Camera:
   m_GameObject: {fileID: 963194225}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 1
   m_BackGroundColor: {r: 0.4339623, g: 0.4339623, b: 0.4339623, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -422,12 +502,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27b12ca87cf23e14eb2ff7a05ffbca96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _voxelStepX: 0.05
-  _voxelStepY: 0.05
-  _voxelStepZ: 0.05
+  _voxelStepX: 0.02
+  _voxelStepY: 0.02
+  _voxelStepZ: 0.02
   _voxelPlaneOffset: 0.2
   _showVxoelMesh: 1
+  _showDebugVoxelColor: 1
   _voxelMaterial: {fileID: 2100000, guid: 97934bf497054d04e8b8cd2a49cbc2cf, type: 2}
+--- !u!114 &963194230
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 618b0e3f6c65dd247a4a016150006c57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_LookSpeedController: 60
+  m_LookSpeedMouse: 10
+  m_MoveSpeed: 10
+  m_MoveSpeedIncrement: 2.5
+  m_Turbo: 10
 --- !u!1 &1374829758
 GameObject:
   m_ObjectHideFlags: 0
@@ -766,7 +864,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showDebugVoxelColor: 0
+  _showDebugVoxelColor: 1
 --- !u!135 &2141815238
 SphereCollider:
   m_ObjectHideFlags: 0
