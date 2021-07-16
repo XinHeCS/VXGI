@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Net.Http.Headers;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -16,6 +14,12 @@ public class Voxelization : MonoBehaviour
     public float _voxelStepZ = 0.5f;
 
     public float _voxelPlaneOffset = 0.2f;
+
+    public bool _showVxoelMesh = true;
+
+    public Material _voxelMaterial;
+
+    private Mesh _vxoelMesh;
 
     private Vector3 _resolution;
 
@@ -41,6 +45,7 @@ public class Voxelization : MonoBehaviour
     private void Start()
     {
         _mainCamera = GetComponent<Camera>();
+        _vxoelMesh = new Mesh();
     }
 
     private void Update()
@@ -49,18 +54,10 @@ public class Voxelization : MonoBehaviour
         {
             UpdateVoxelCamera();
         }
-        
-        // ReadVoxelBuffer();
-    }
 
-    private void OnPostRender()
-    {
-        _data = new int[_length];
-        _voxelBuffer.GetData(_data);
-        
-        foreach (var obj in _objs)
+        if (_showVxoelMesh && (_voxelMaterial != null))
         {
-            obj.ShowVoxelMesh();
+            RenderVoxelMesh();
         }
     }
 
@@ -108,6 +105,29 @@ public class Voxelization : MonoBehaviour
         return _data[index];
     }
 
+    private void BuildVoxelVolumeVertexBuffer()
+    {
+        Vector3[] vertices = new Vector3[_length];
+        int[] indices = new int[_length];
+
+        for (int i = 0; i < _length; i++)
+        {
+            indices[i] = i;
+        }
+        
+        _vxoelMesh.SetVertices(vertices);
+        _vxoelMesh.SetIndices(indices, MeshTopology.Points, 0);
+    }
+
+    private void RenderVoxelMesh()
+    {
+        _voxelMaterial.SetBuffer(_voxelBufferID, _voxelBuffer);
+        _voxelMaterial.SetVector(_sceneBoundsMinID, _sceneBounds.min);
+        _voxelMaterial.SetVector(_resolutionID, _resolution);
+        _voxelMaterial.SetFloat(_voxelStepID, _voxelStepX);
+        Graphics.DrawMesh(_vxoelMesh, Matrix4x4.identity, _voxelMaterial, LayerMask.NameToLayer("Default"));
+    }
+
     private void BuildVoxelBuffer(VoxelRenderer voxelRenderer)
     {
         var material = voxelRenderer.material;
@@ -133,10 +153,15 @@ public class Voxelization : MonoBehaviour
         _resolution = Vector3Int.zero;
         _resolution.x = (int) (range.x / _voxelStepX) + 1;
         _resolution.y = (int) (range.y / _voxelStepY) + 1;
-        _resolution.z = (int) (range.z / _voxelStepZ) + 1;  
-        _length = (int)(_resolution.x * _resolution.y * _resolution.z);
+        _resolution.z = (int) (range.z / _voxelStepZ) + 1;
+        var length = (int)(_resolution.x * _resolution.y * _resolution.z);
         
-        UpdateVoxelBuffer(_length);
+        UpdateVoxelBuffer(length);
+        if (length != _length)
+        {
+            _length = length;
+            BuildVoxelVolumeVertexBuffer();
+        }
 
         foreach (var obj in _objs)
         {

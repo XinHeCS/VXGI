@@ -1,15 +1,14 @@
 using System;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
+using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(MeshFilter))]
 public class VoxelRenderer : MonoBehaviour
 {
-    public bool _showVoxels = true;
-
-    public Material _voxelMaterial;
+    public bool _showDebugVoxelColor = true;
     
     private Mesh _mesh;
 
@@ -21,7 +20,7 @@ public class VoxelRenderer : MonoBehaviour
     
     private Voxelization _voxelization;
 
-    private bool GenerateVoxelMesh => _showVoxels && _voxelGo == null;
+    private bool GenerateVoxelMesh => _showDebugVoxelColor && _voxelGo == null;
 
     // Start is called before the first frame update
     void Start()
@@ -39,20 +38,9 @@ public class VoxelRenderer : MonoBehaviour
         _voxelization.AddVoxelObjects(this);
     }
 
-    public void ShowVoxelMesh()
+    private void Update()
     {
-        if (GenerateVoxelMesh)
-        {
-            BuildVoxelMesh();
-        }
-        else
-        {
-            if (_voxelGo)
-            {
-                // _voxelGo.SetActive(false);
-                // _meshRenderer.enabled = true;
-            }
-        }
+        EnableDebugColor(_showDebugVoxelColor);
     }
 
     public Bounds GetAABB()
@@ -76,16 +64,18 @@ public class VoxelRenderer : MonoBehaviour
         }
     }
 
-    private void BuildVoxelMesh()
+    private void EnableDebugColor(bool enable)
     {
-        _voxelGo = new GameObject("Voxel mesh");
+        var material = _meshRenderer.sharedMaterial;
+        if (enable)
+        {
+            material.EnableKeyword("VOXEL_MESH");
+        }
+        else
+        {
+            material.DisableKeyword("VOXEL_MESH");
+        }
 
-        var meshFilter = _voxelGo.AddComponent<MeshFilter>();
-        meshFilter.mesh = _voxelization.GetVoxelMesh(this);
-        var meshRenderer = _voxelGo.AddComponent<MeshRenderer>();
-        meshRenderer.material = _voxelMaterial;
-
-        _meshRenderer.enabled = false;
-        _voxelGo.transform.SetParent(transform);
+        _meshRenderer.sharedMaterial = material;
     }
 }

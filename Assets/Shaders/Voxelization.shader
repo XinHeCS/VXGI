@@ -2,7 +2,6 @@ Shader "Unlit/Voxelization"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1, 1, 1, 1)
     }
     SubShader
@@ -120,7 +119,7 @@ Shader "Unlit/Voxelization"
                     float(y) / float(_resolution.y),
                     float(z) / float(_resolution.z),
                     1
-                    );                
+                    );
                 return col;
             }
             ENDCG
@@ -178,6 +177,7 @@ Shader "Unlit/Voxelization"
             
             fixed4 frag(g2f i) : SV_Target
             {
+#ifdef VOXEL_MESH
                 int x = clamp(int((i.wordPos.x - _sceneMinAABB.x) / _step), 0, _resolution.x - 1);
                 int y = clamp(int((i.wordPos.y - _sceneMinAABB.y) / _step), 0, _resolution.y - 1);
                 int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
@@ -195,8 +195,11 @@ Shader "Unlit/Voxelization"
                         1
                         );
                 }
-                
                 return col;
+#else
+                clip(-1);
+#endif
+                return fixed4(0 ,0 ,0 ,0);
             }
             
             ENDCG
