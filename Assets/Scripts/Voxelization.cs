@@ -47,6 +47,7 @@ public class Voxelization : MonoBehaviour
 
     private void Start()
     {
+        RenderPipelineManager.endCameraRendering += OnEndRendering;
         _mainCamera = GetComponent<Camera>();
         _vxoelMesh = new Mesh();
     }
@@ -57,10 +58,13 @@ public class Voxelization : MonoBehaviour
         {
             UpdateVoxelCamera();
         }
+    }
 
+    private void OnEndRendering(ScriptableRenderContext context, Camera camera)
+    {
         if (_showVxoelMesh && (_voxelMaterial != null))
         {
-            RenderVoxelMesh();
+            // RenderVoxelMesh();
         }
     }
 
@@ -129,12 +133,23 @@ public class Voxelization : MonoBehaviour
 
     private void RenderVoxelMesh()
     {
-        _voxelMaterial.SetBuffer(_voxelBufferID, _voxelBuffer);
-        _voxelMaterial.SetVector(_sceneBoundsMinID, _sceneBounds.min);
-        _voxelMaterial.SetVector(_resolutionID, _resolution);
-        _voxelMaterial.SetFloat(_voxelStepID, _voxelStepX);
-        EnableDebugColor(_showDebugVoxelColor);
-        Graphics.DrawMesh(_vxoelMesh, Matrix4x4.identity, _voxelMaterial, LayerMask.NameToLayer("Default"));
+        // _voxelMaterial.SetBuffer(_voxelBufferID, _voxelBuffer);
+        // _voxelMaterial.SetVector(_sceneBoundsMinID, _sceneBounds.min);
+        // _voxelMaterial.SetVector(_resolutionID, _resolution);
+        // _voxelMaterial.SetFloat(_voxelStepID, _voxelStepX);
+        // EnableDebugColor(_showDebugVoxelColor);
+        _data = new int[_length];
+        _voxelBuffer.GetData(_data);
+
+        foreach (VoxelRenderer voxelRenderer in _objs)
+        {
+            if (voxelRenderer.voxelMesh == null)
+            {
+                voxelRenderer.voxelMesh = GetVoxelMesh(voxelRenderer);
+            }
+            Graphics.DrawMesh(voxelRenderer.voxelMesh, Matrix4x4.identity, _voxelMaterial, LayerMask.NameToLayer("Default"));
+        }
+        
     }
 
     private void BuildVoxelBuffer(VoxelRenderer voxelRenderer)

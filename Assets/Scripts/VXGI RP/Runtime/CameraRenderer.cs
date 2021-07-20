@@ -11,7 +11,10 @@ public class CameraRenderer
     private static ShaderTagId[] _shaderTagIdList = new ShaderTagId[]
     {
         new ShaderTagId("Voxelization"),
-        new ShaderTagId("SRPDefaultUnlit")
+        new ShaderTagId("SRPDefaultUnlit"),
+        // new ShaderTagId("FORWARDBASE"),
+        // new ShaderTagId("FORWARDADD"),
+        // new ShaderTagId("SHADOWCASTER")
     };
     
     ScriptableRenderContext _context;
