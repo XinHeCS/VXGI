@@ -8,11 +8,7 @@ using UnityEngine.Serialization;
 [RequireComponent(typeof(Camera))]
 public class Voxelization : MonoBehaviour
 {
-    public float _voxelStepX = 0.5f;
-    
-    public float _voxelStepY = 0.5f;
-    
-    public float _voxelStepZ = 0.5f;
+    public float _voxelStep = 0.5f;
 
     public float _voxelPlaneOffset = 0.2f;
 
@@ -22,7 +18,7 @@ public class Voxelization : MonoBehaviour
 
     public Material _voxelMaterial;
 
-    private Mesh _vxoelMesh;
+    private Mesh _voxelMesh;
 
     private Vector3 _resolution;
 
@@ -49,7 +45,7 @@ public class Voxelization : MonoBehaviour
     {
         RenderPipelineManager.endCameraRendering += OnEndRendering;
         _mainCamera = GetComponent<Camera>();
-        _vxoelMesh = new Mesh();
+        BuildVoxelVolumeVertexBuffer();
     }
 
     private void Update()
@@ -64,7 +60,7 @@ public class Voxelization : MonoBehaviour
     {
         if (_showVxoelMesh && (_voxelMaterial != null))
         {
-            // RenderVoxelMesh();
+            RenderVoxelMesh();
         }
     }
 
@@ -90,19 +86,19 @@ public class Voxelization : MonoBehaviour
         Vector3 range = bound.max - bound.min;
         Vector3Int startIndex = new Vector3Int
         {
-            x = (int)Mathf.Clamp((bound.min.x - _sceneBounds.min.x) / _voxelStepX, 0.0f, _resolution.x - 1),
-            y = (int)Mathf.Clamp((bound.min.y - _sceneBounds.min.y) / _voxelStepX, 0.0f, _resolution.y - 1),
-            z = (int)Mathf.Clamp((bound.min.z - _sceneBounds.min.z) / _voxelStepX, 0.0f, _resolution.z - 1)
+            x = (int)Mathf.Clamp((bound.min.x - _sceneBounds.min.x) / _voxelStep, 0.0f, _resolution.x - 1),
+            y = (int)Mathf.Clamp((bound.min.y - _sceneBounds.min.y) / _voxelStep, 0.0f, _resolution.y - 1),
+            z = (int)Mathf.Clamp((bound.min.z - _sceneBounds.min.z) / _voxelStep, 0.0f, _resolution.z - 1)
         };
         Vector3Int endIndex = new Vector3Int
         {
-            x = (int) Mathf.Clamp((bound.max.x - _sceneBounds.min.x) / _voxelStepX, 0.0f, _resolution.x - 1),
-            y = (int) Mathf.Clamp((bound.max.y - _sceneBounds.min.y) / _voxelStepX, 0.0f, _resolution.y - 1),
-            z = (int) Mathf.Clamp((bound.max.z - _sceneBounds.min.z) / _voxelStepX, 0.0f, _resolution.z - 1)
+            x = (int) Mathf.Clamp((bound.max.x - _sceneBounds.min.x) / _voxelStep, 0.0f, _resolution.x - 1),
+            y = (int) Mathf.Clamp((bound.max.y - _sceneBounds.min.y) / _voxelStep, 0.0f, _resolution.y - 1),
+            z = (int) Mathf.Clamp((bound.max.z - _sceneBounds.min.z) / _voxelStep, 0.0f, _resolution.z - 1)
         };
 
         return VoxelMeshBuilder.CreateMesh(
-            this, startIndex, endIndex, new Vector3(_voxelStepX, _voxelStepY, _voxelStepZ), _sceneBounds.min
+            this, startIndex, endIndex, new Vector3(_voxelStep, _voxelStep, _voxelStep), _sceneBounds.min
             );
     }
 
@@ -111,45 +107,76 @@ public class Voxelization : MonoBehaviour
         int index = (int)(y * _resolution.x * _resolution.z + z * _resolution.x + x);
         return _data[index];
     }
+    
+    /**
+     *  Box mesh generator
+     * 
+     *        E__________________ H
+     *       /|                 /|
+     *      / |                / |
+     *     /  |               /  |
+     *   A/__________________/D  |
+     *    |                  |   |
+     *    |   |              |   |
+     *    |   |              |   |
+     *    |  F|______________|___|G
+     *    |  /               |  /
+     *    | /                | /
+     *   B|/_________________|C
+     *
+     */
+    private enum VertexIndex
+    { A = 0, B = 1, C = 2, D = 3, E = 4, F = 5, G = 6, H = 7 };
 
     private void BuildVoxelVolumeVertexBuffer()
     {
-        Vector3[] vertices = new Vector3[_length];
-        int[] indices = new int[_length];
+        _voxelMesh = new Mesh();
 
-        for (int i = 0; i < _length; i++)
-        {
-            indices[i] = i;
-        }
+        Vector3[] outPoints = {
+            new Vector3( -1.0f, +1.0f, +1.0f ), // A
+            new Vector3( -1.0f, -1.0f, +1.0f ), // B
+            new Vector3( +1.0f, -1.0f, +1.0f ), // C
+            new Vector3( +1.0f, +1.0f, +1.0f ), // D
+            new Vector3( -1.0f, +1.0f, -1.0f ), // E
+            new Vector3( -1.0f, -1.0f, -1.0f ), // F
+            new Vector3( +1.0f, -1.0f, -1.0f ), // G
+            new Vector3( +1.0f, +1.0f, -1.0f )  // H
+        };
 
-        if (vertices.Length > 65000)
-        {
-            _vxoelMesh.indexFormat = IndexFormat.UInt32;
-        }
+        int[] outIndices = {
+            (int)VertexIndex.A, (int)VertexIndex.B, (int)VertexIndex.D, // ABD
+            (int)VertexIndex.D, (int)VertexIndex.B, (int)VertexIndex.C, // DBC
+            (int)VertexIndex.E, (int)VertexIndex.H, (int)VertexIndex.F, // EHF
+            (int)VertexIndex.H, (int)VertexIndex.G, (int)VertexIndex.F, // HGF
+
+            (int)VertexIndex.D, (int)VertexIndex.C, (int)VertexIndex.G, // DCG
+            (int)VertexIndex.D, (int)VertexIndex.G, (int)VertexIndex.H, // DGH
+            (int)VertexIndex.A, (int)VertexIndex.F, (int)VertexIndex.B, // AFB
+            (int)VertexIndex.A, (int)VertexIndex.E, (int)VertexIndex.F, // AEF
+
+            (int)VertexIndex.A, (int)VertexIndex.D, (int)VertexIndex.H, // ADH
+            (int)VertexIndex.A, (int)VertexIndex.H, (int)VertexIndex.E, // AHE
+            (int)VertexIndex.B, (int)VertexIndex.F, (int)VertexIndex.G, // BFG
+            (int)VertexIndex.B, (int)VertexIndex.G, (int)VertexIndex.C, // BGC
+        };
         
-        _vxoelMesh.SetVertices(vertices);
-        _vxoelMesh.SetIndices(indices, MeshTopology.Points, 0);
+        _voxelMesh.SetVertices(outPoints);
+        _voxelMesh.SetIndices(outIndices, MeshTopology.Triangles, 0);
+        _voxelMesh.RecalculateNormals();
     }
 
     private void RenderVoxelMesh()
     {
-        // _voxelMaterial.SetBuffer(_voxelBufferID, _voxelBuffer);
-        // _voxelMaterial.SetVector(_sceneBoundsMinID, _sceneBounds.min);
-        // _voxelMaterial.SetVector(_resolutionID, _resolution);
-        // _voxelMaterial.SetFloat(_voxelStepID, _voxelStepX);
-        // EnableDebugColor(_showDebugVoxelColor);
-        _data = new int[_length];
-        _voxelBuffer.GetData(_data);
+        _voxelMaterial.SetBuffer(_voxelBufferID, _voxelBuffer);
+        _voxelMaterial.SetVector(_sceneBoundsMinID, _sceneBounds.min);
+        _voxelMaterial.SetVector(_resolutionID, _resolution);
+        _voxelMaterial.SetFloat(_voxelStepID, _voxelStep);
+        EnableDebugColor(_showDebugVoxelColor);
 
-        foreach (VoxelRenderer voxelRenderer in _objs)
+        if (_voxelMesh != null)
         {
-            if (voxelRenderer.voxelMesh == null)
-            {
-                voxelRenderer.voxelMesh = GetVoxelMesh(voxelRenderer);
-            }
-            Graphics.DrawMesh(voxelRenderer.voxelMesh, Matrix4x4.identity, _voxelMaterial, LayerMask.NameToLayer("Default"));
+            Graphics.DrawMeshInstanced(_voxelMesh, 0, _voxelMaterial, new Matrix4x4[_length]);
         }
-        
     }
 
     private void BuildVoxelBuffer(VoxelRenderer voxelRenderer)
@@ -175,22 +202,21 @@ public class Voxelization : MonoBehaviour
         Vector3 max = _sceneBounds.max;
         Vector3 range = max - min;
         _resolution = Vector3Int.zero;
-        _resolution.x = (int) (range.x / _voxelStepX) + 1;
-        _resolution.y = (int) (range.y / _voxelStepY) + 1;
-        _resolution.z = (int) (range.z / _voxelStepZ) + 1;
+        _resolution.x = (int) (range.x / _voxelStep) + 1;
+        _resolution.y = (int) (range.y / _voxelStep) + 1;
+        _resolution.z = (int) (range.z / _voxelStep) + 1;
         var length = (int)(_resolution.x * _resolution.y * _resolution.z);
         
         UpdateVoxelBuffer(length);
         if (length != _length)
         {
             _length = length;
-            BuildVoxelVolumeVertexBuffer();
         }
 
         foreach (var obj in _objs)
         {
             var material = obj.sharedMaterial;
-            material.SetFloat(_voxelStepID, _voxelStepX);
+            material.SetFloat(_voxelStepID, _voxelStep);
             material.SetVector(_sceneBoundsMinID, _sceneBounds.min);
             material.SetVector(_sceneBoundsMaxID, _sceneBounds.max);
             material.SetVector(_resolutionID, _resolution);
