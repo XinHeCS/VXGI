@@ -40,7 +40,7 @@ Shader "Unlit/Voxelization"
 
             struct g2f
             {
-                float4 clipPos : SV_POSITION;
+                float4 vertex : SV_POSITION;
                 float4 wordPos : TEXCOORD1;
                 float2 uv : TEXCOORD0;
             };
@@ -90,7 +90,7 @@ Shader "Unlit/Voxelization"
                 {
                     g2f o;
                     o.wordPos = IN[i].vertex;
-                    o.clipPos = mul(_viewProject[index], IN[i].vertex);
+                    o.vertex = mul(_viewProject[index], IN[i].vertex);
                     o.uv = IN[i].uv;
                     OUT.Append(o);
                 }

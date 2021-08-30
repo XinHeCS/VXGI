@@ -14,10 +14,10 @@ Shader "Unlit/DrawVoxel"
         {
             CGPROGRAM
             #pragma enable_d3d11_debug_symbols
-            #pragma multi_compile_instancing
             #pragma multi_compile_local _ VOXEL_MESH
             #pragma target 5.0
             #pragma vertex vert
+            #pragma geometry geom
             #pragma fragment frag
             // make fog work
 
@@ -25,17 +25,20 @@ Shader "Unlit/DrawVoxel"
 
             struct appdata
             {
-                float3 vertex : POSITION;
-                float3 normal : NORMAL;
-                uint index : SV_InstanceID;
+                uint index : SV_VertexID;
             };
 
-            struct v2f
+            struct v2g
             {
-                float4 clipPos : SV_POSITION;
-                float3 normal : NORMAL;
-                float4 voxelPos : TEXCOORD0;
-                uint index : TEXCOORD1;
+                float4 vertex : POSITION;
+                uint3 voxelPos : TEXCOORD1;
+                uint index : TEXCOORD0;
+            };
+
+            struct g2f
+            {
+                float4 vertex : SV_POSITION;
+                uint3 voxelPos : TEXCOORD0;
             };
 
             sampler2D _MainTex;
@@ -45,9 +48,9 @@ Shader "Unlit/DrawVoxel"
             float3 _sceneMinAABB;
             float3 _resolution;
             float _step;
-            v2f vert (appdata v)
+            v2g vert (appdata v)
             {
-                v2f o;
+                v2g o;
 
                 uint3 resolutionInt = uint3(
                     uint(_resolution.x),
@@ -59,20 +62,81 @@ Shader "Unlit/DrawVoxel"
                     uint(v.index / (resolutionInt.z * resolutionInt.x)),
                     uint(v.index % (resolutionInt.x * resolutionInt.z) / resolutionInt.x)
                     );
-                float3 stepVec = float3(_step, _step, _step);
-                float3 startPos = _sceneMinAABB + stepVec * 0.5f;
-                float4 worldPos = float4(boundPos * stepVec + startPos, 1);
-                float4 offset = float4(v.vertex * _step * 0.5f, 1);
-                o.clipPos = UnityWorldToClipPos(worldPos + offset);
-                o.normal = v.normal;
-                o.voxelPos = worldPos;
+                float3 startPos = _sceneMinAABB + float3(_step, _step, _step) * 0.5f;
+                o.vertex = float4(boundPos * float3(_step, _step, _step) + startPos, 1);
+                o.voxelPos = boundPos;
                 o.index = v.index;
                 
                 return o;
             }
 
+            [maxvertexcount(36)]
+            void geom(point v2g IN[1], inout TriangleStream<g2f> OUT)
+            {
+	            const float4 cubeVertices[8] = 
+	            {
+                    float4( 0.5f,  0.5f,  0.5f, 0.0f),
+                    float4( 0.5f,  0.5f, -0.5f, 0.0f),
+                    float4( 0.5f, -0.5f,  0.5f, 0.0f),
+                    float4( 0.5f, -0.5f, -0.5f, 0.0f),
+                    float4(-0.5f,  0.5f,  0.5f, 0.0f),
+                    float4(-0.5f,  0.5f, -0.5f, 0.0f),
+                    float4(-0.5f, -0.5f,  0.5f, 0.0f),
+                    float4(-0.5f, -0.5f, -0.5f, 0.0f)
+	            };
+                
+	            const int cubeIndices[24] = 
+	            {
+		            0, 2, 1, 3, // right
+		            6, 4, 7, 5, // left
+		            5, 4, 1, 0, // up
+		            6, 7, 2, 3, // down
+		            4, 6, 0, 2, // front
+		            1, 3, 5, 7  // back
+	            };
+
+                if (_voxelBuffer[IN[0].index] < 1)
+                {
+                    return;
+                }
+
+                float4 stepVec = float4(_step, _step, _step, 0);
+                float4 projectVertex[8];
+                for (int i = 0; i < 8; ++i)
+                {
+                    float4 vertexPos = IN[0].vertex + stepVec * cubeVertices[i];
+                    projectVertex[i] = mul(unity_MatrixVP, vertexPos);
+                }
+
+                for (int face = 0; face < 6; ++face)
+                {
+                    // Add first triangle
+                    for (int i = 0; i < 3; ++i)
+                    {
+                        g2f o;
+                        o.vertex = projectVertex[cubeIndices[4 * face + i]];
+                        o.voxelPos = IN[0].voxelPos;
+                        OUT.Append(o);
+                    }
+                    OUT.RestartStrip();
+
+                    // Add second triangle
+                    g2f v1, v2, v3;
+                    v1.vertex = projectVertex[cubeIndices[4 * face + 2]];
+                    v1.voxelPos = IN[0].voxelPos;
+                    v2.vertex = projectVertex[cubeIndices[4 * face + 1]];
+                    v2.voxelPos = IN[0].voxelPos;
+                    v3.vertex = projectVertex[cubeIndices[4 * face + 3]];
+                    v3.voxelPos = IN[0].voxelPos;
+                    OUT.Append(v1);
+                    OUT.Append(v2);
+                    OUT.Append(v3);
+                    OUT.RestartStrip();
+                }
+            }
+
             fixed4 _Color;
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag (v2g i) : SV_Target
             {
                 // sample the texture
                 fixed4 col = _Color;
@@ -83,20 +147,7 @@ Shader "Unlit/DrawVoxel"
                     float(i.voxelPos.z) / float(_resolution.z),
                     1
                 );
-#else
-                float3 lightDir = normalize(UnityWorldSpaceLightDir(i.voxelPos));
-                float3 viewDir = normalize(UnityWorldSpaceViewDir(i.voxelPos));
-                float3 halfway = normalize(lightDir + viewDir);
-
-                float3 ambient = float3(0.1, 0.1, 0.1) * _Color;
-                
-                float diff = max(dot(lightDir, i.normal), 0.0);
-                float3 diffuse = diff * _Color;
-                
-                float spec = pow(max(dot(i.normal, halfway), 0.0), 15);
-                float3 specular = float3(unity_LightColor0.x, unity_LightColor0.y, unity_LightColor0.z) * spec;
-                col = half4(ambient + diffuse + specular, 1); 
-#endif  
+#endif
                 return col;
             }
             ENDCG
