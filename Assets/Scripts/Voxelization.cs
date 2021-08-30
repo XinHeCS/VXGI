@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
@@ -16,21 +18,11 @@ public class Voxelization : MonoBehaviour
 
     public float _voxelPlaneOffset = 0.2f;
 
-    public bool _showVxoelMesh = true;
-    
-    public bool _showDebugVoxelColor = true;
-
-    public Material _voxelMaterial;
-
-    private Mesh _vxoelMesh;
-
-    private Vector3 _resolution;
+    private Vector3Int _resolution;
 
     private int _length;
-    
-    private Camera _mainCamera;
 
-    private ComputeBuffer _voxelBuffer;
+    private RenderTexture _voxelVolumeBuffer;
 
     private int[] _data;
 
@@ -47,9 +39,7 @@ public class Voxelization : MonoBehaviour
 
     private void Start()
     {
-        RenderPipelineManager.endCameraRendering += OnEndRendering;
-        _mainCamera = GetComponent<Camera>();
-        _vxoelMesh = new Mesh();
+        // _mainCamera = GetComponent<Camera>();
     }
 
     private void Update()
@@ -58,13 +48,15 @@ public class Voxelization : MonoBehaviour
         {
             UpdateVoxelCamera();
         }
+        
+        // ReadVoxelBuffer();
     }
 
-    private void OnEndRendering(ScriptableRenderContext context, Camera camera)
+    private void OnPostRender()
     {
-        if (_showVxoelMesh && (_voxelMaterial != null))
+        foreach (var obj in _objs)
         {
-            // RenderVoxelMesh();
+            obj.ShowVoxelMesh();
         }
     }
 
@@ -112,52 +104,6 @@ public class Voxelization : MonoBehaviour
         return _data[index];
     }
 
-    private void BuildVoxelVolumeVertexBuffer()
-    {
-        Vector3[] vertices = new Vector3[_length];
-        int[] indices = new int[_length];
-
-        for (int i = 0; i < _length; i++)
-        {
-            indices[i] = i;
-        }
-
-        if (vertices.Length > 65000)
-        {
-            _vxoelMesh.indexFormat = IndexFormat.UInt32;
-        }
-        
-        _vxoelMesh.SetVertices(vertices);
-        _vxoelMesh.SetIndices(indices, MeshTopology.Points, 0);
-    }
-
-    private void RenderVoxelMesh()
-    {
-        // _voxelMaterial.SetBuffer(_voxelBufferID, _voxelBuffer);
-        // _voxelMaterial.SetVector(_sceneBoundsMinID, _sceneBounds.min);
-        // _voxelMaterial.SetVector(_resolutionID, _resolution);
-        // _voxelMaterial.SetFloat(_voxelStepID, _voxelStepX);
-        // EnableDebugColor(_showDebugVoxelColor);
-        _data = new int[_length];
-        _voxelBuffer.GetData(_data);
-
-        foreach (VoxelRenderer voxelRenderer in _objs)
-        {
-            if (voxelRenderer.voxelMesh == null)
-            {
-                voxelRenderer.voxelMesh = GetVoxelMesh(voxelRenderer);
-            }
-            Graphics.DrawMesh(voxelRenderer.voxelMesh, Matrix4x4.identity, _voxelMaterial, LayerMask.NameToLayer("Default"));
-        }
-        
-    }
-
-    private void BuildVoxelBuffer(VoxelRenderer voxelRenderer)
-    {
-        var material = voxelRenderer.material;
-        material.SetBuffer(_voxelBufferID, _voxelBuffer);
-    }
-
     private bool UpdateVoxelParam()
     {
         if (_objs.Count <= 0)
@@ -177,15 +123,10 @@ public class Voxelization : MonoBehaviour
         _resolution = Vector3Int.zero;
         _resolution.x = (int) (range.x / _voxelStepX) + 1;
         _resolution.y = (int) (range.y / _voxelStepY) + 1;
-        _resolution.z = (int) (range.z / _voxelStepZ) + 1;
-        var length = (int)(_resolution.x * _resolution.y * _resolution.z);
+        _resolution.z = (int) (range.z / _voxelStepZ) + 1;  
+        _length = (int)(_resolution.x * _resolution.y * _resolution.z);
         
-        UpdateVoxelBuffer(length);
-        if (length != _length)
-        {
-            _length = length;
-            BuildVoxelVolumeVertexBuffer();
-        }
+        UpdateVoxelBuffer(_length);
 
         foreach (var obj in _objs)
         {
@@ -193,7 +134,7 @@ public class Voxelization : MonoBehaviour
             material.SetFloat(_voxelStepID, _voxelStepX);
             material.SetVector(_sceneBoundsMinID, _sceneBounds.min);
             material.SetVector(_sceneBoundsMaxID, _sceneBounds.max);
-            material.SetVector(_resolutionID, _resolution);
+            material.SetVector(_resolutionID, new Vector3(_resolution.x, _resolution.y, _resolution.z));
         }
 
         return true;
@@ -269,53 +210,29 @@ public class Voxelization : MonoBehaviour
         {
             var material = obj.sharedMaterial;
             material.SetMatrixArray(_voxelPlaneID, cameraMat);
-            material.SetBuffer(_voxelBufferID, _voxelBuffer);
+            material.SetTexture(_voxelBufferID, _voxelVolumeBuffer);
         }
     }
 
     private void UpdateVoxelBuffer(int length)
     {
-        _voxelBuffer?.Release();
-        _voxelBuffer = new ComputeBuffer(length, sizeof(int), ComputeBufferType.Structured);
-        Graphics.ClearRandomWriteTargets();
-        Graphics.SetRandomWriteTarget(1, _voxelBuffer,false);
+        // _voxelBuffer?.Release();
+        // _voxelBuffer = new ComputeBuffer(length, sizeof(int), ComputeBufferType.Structured);
+        // Graphics.ClearRandomWriteTargets();
+        // Graphics.SetRandomWriteTarget(1, _voxelBuffer,false);
         // var testList = new List<int>(length);  
         // _voxelBuffer.SetData(new List<int>(length));
-    }
-    
-    private void EnableDebugColor(bool enable)
-    {
-        if (enable)
+        if (_voxelVolumeBuffer == null)
         {
-            _voxelMaterial.EnableKeyword("VOXEL_MESH");
+            _voxelVolumeBuffer =
+                new RenderTexture(_resolution.x, _resolution.y, 0, RenderTextureFormat.ARGB32);
+            _voxelVolumeBuffer.dimension = TextureDimension.Tex3D;
+            _voxelVolumeBuffer.volumeDepth = _resolution.z;
+            _voxelVolumeBuffer.enableRandomWrite = true;
+            _voxelVolumeBuffer.Create();
         }
-        else
-        {
-            _voxelMaterial.DisableKeyword("VOXEL_MESH");
-        }
-    }
-
-    private void ReadVoxelBuffer()
-    {
-        if (_voxelBuffer != null)
-        {
-            int[] data = new int[_length];
-            _voxelBuffer.GetData(data);
-
-            int voxelCount = 0;
-            for (int i = 0; i < _length; i++)
-            {
-                if (data[i] >= 1)
-                {
-                    ++voxelCount;
-                }
-            }
-            print($"Build Voxel: {voxelCount} / {_length}");
-        }
-    }
-
-    private void OnDestroy()
-    {
-        _voxelBuffer?.Dispose();
+        
+        Graphics.ClearRandomWriteTargets();
+        Graphics.SetRandomWriteTarget(1, _voxelVolumeBuffer);
     }
 }

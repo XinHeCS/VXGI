@@ -178,6 +178,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: dragon
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3261972472372342013, guid: 66b3687f2100d4d4198b34b130af2c2c, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -201,7 +205,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showDebugVoxelColor: 1
+  _showVoxels: 1
+  _voxelMaterial: {fileID: 0}
 --- !u!1 &309206163
 GameObject:
   m_ObjectHideFlags: 0
@@ -221,7 +226,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &309206164
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -234,7 +239,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showDebugVoxelColor: 0
+  _showVoxels: 1
+  _voxelMaterial: {fileID: 0}
 --- !u!136 &309206165
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -502,13 +508,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27b12ca87cf23e14eb2ff7a05ffbca96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _voxelStepX: 0.02
-  _voxelStepY: 0.02
-  _voxelStepZ: 0.02
+  _voxelStepX: 0.1
+  _voxelStepY: 0.1
+  _voxelStepZ: 0.1
   _voxelPlaneOffset: 0.2
-  _showVxoelMesh: 1
-  _showDebugVoxelColor: 1
-  _voxelMaterial: {fileID: 2100000, guid: 090a13c604fd7694eb5474803227f4e9, type: 2}
 --- !u!114 &963194230
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -545,7 +548,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1374829759
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -558,7 +561,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showDebugVoxelColor: 0
+  _showVoxels: 1
+  _voxelMaterial: {fileID: 0}
 --- !u!136 &1374829760
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -701,7 +705,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 3c56292046feb0a4b8f284a1626a65d2, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3c56292046feb0a4b8f284a1626a65d2, type: 3}
@@ -722,7 +726,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showDebugVoxelColor: 0
+  _showVoxels: 1
+  _voxelMaterial: {fileID: 0}
 --- !u!1 &1961419029
 GameObject:
   m_ObjectHideFlags: 0
@@ -755,7 +760,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showDebugVoxelColor: 0
+  _showVoxels: 1
+  _voxelMaterial: {fileID: 0}
 --- !u!65 &1961419031
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -826,7 +832,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1961419029}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.82, y: 1.154, z: 0.28}
+  m_LocalPosition: {x: -4.96, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -851,7 +857,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2141815237
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -864,7 +870,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showDebugVoxelColor: 1
+  _showVoxels: 1
+  _voxelMaterial: {fileID: 0}
 --- !u!135 &2141815238
 SphereCollider:
   m_ObjectHideFlags: 0

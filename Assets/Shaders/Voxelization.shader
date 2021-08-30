@@ -2,6 +2,7 @@ Shader "Unlit/Voxelization"
 {
     Properties
     {
+        _MainTex ("Texture", 2D) = "white" {}
         _Color ("Color", Color) = (1, 1, 1, 1)
     }
     SubShader
@@ -96,113 +97,113 @@ Shader "Unlit/Voxelization"
                 }
             }
 
-            uniform RWStructuredBuffer<int> _voxelBuffer : register(u1);
+            // uniform RWStructuredBuffer<int> _voxelBuffer : register(u1);
             float3 _sceneMinAABB;
             float3 _sceneMaxAABB;
             float3 _resolution;
             float _step;
+
+            uniform RWTexture3D<uint> _voxelBuffer : register(u1);
+            
             fixed4 frag (g2f i) : SV_Target
             {
                 int x = clamp(int((i.wordPos.x - _sceneMinAABB.x) / _step), 0, _resolution.x - 1);
                 int y = clamp(int((i.wordPos.y - _sceneMinAABB.y) / _step), 0, _resolution.y - 1);
                 int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
                 
-                int index = int(y * _resolution.x * _resolution.z + z * _resolution.x + x);
+                uint3 index = uint3(x, y, z);
                 InterlockedOr(_voxelBuffer[index], 1);
                 
                 // sample the texture
                 // fixed4 col = float4(0, 0, 0, 0);
-                clip(-1);
+                // clip(-1);
                 fixed4 col = float4(1, 1, 1, 1);
                 col = fixed4(
                     float(x) / float(_resolution.x),
                     float(y) / float(_resolution.y),
                     float(z) / float(_resolution.z),
                     1
-                    );
+                    );                
                 return col;
             }
             ENDCG
         }
         
         // Render geometry
-//        Pass {
-//            cull back
-//            CGPROGRAM
-//            #pragma enable_d3d11_debug_symbols
-//            #pragma multi_compile_local _ VOXEL_MESH
-//            #pragma target 5.0
-//            #pragma vertex vert
-//            // #pragma geometry geom
-//            #pragma fragment frag
-//
-//            #include "UnityCG.cginc"
-//
-//            struct appdata
-//            {
-//                float4 vertex : POSITION;
-//                float2 uv : TEXCOORD0;
-//            };
-//
-//            struct v2g
-//            {
-//                float4 vertex : POSITION;
-//                float2 uv : TEXCOORD0;
-//            };
-//
-//            struct g2f
-//            {
-//                float4 vertex : SV_POSITION;
-//                float4 wordPos : TEXCOORD1;
-//                float2 uv : TEXCOORD0;
-//            };
-//
-//            sampler2D _MainTex;
-//            float4 _MainTex_ST;
-//            
-//            g2f vert(appdata i)
-//            {
-//                g2f o;
-//                o.vertex = UnityObjectToClipPos(i.vertex);
-//                o.uv = TRANSFORM_TEX(i.uv, _MainTex);
-//                o.wordPos = mul(unity_ObjectToWorld, i.vertex);
-//                return o;
-//            }
-//
-//            fixed4 _Color;
-//            uniform RWStructuredBuffer<int> _voxelBuffer : register(u1);
-//            float3 _sceneMinAABB;
-//            float3 _resolution;
-//            float _step;
-//            
-//            fixed4 frag(g2f i) : SV_Target
-//            {
-//#ifdef VOXEL_MESH
-//                int x = clamp(int((i.wordPos.x - _sceneMinAABB.x) / _step), 0, _resolution.x - 1);
-//                int y = clamp(int((i.wordPos.y - _sceneMinAABB.y) / _step), 0, _resolution.y - 1);
-//                int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
-//
-//                const int index = int(y * _resolution.x * _resolution.z + z * _resolution.x + x);
-//                const int voxelValue = (_voxelBuffer[index]);
-//
-//                fixed4 col = fixed4(1, 1, 1, 1);
-//                if (voxelValue >= 1)
-//                {
-//                    col = fixed4(
-//                        float(x) / float(_resolution.x),
-//                        float(y) / float(_resolution.y),
-//                        float(z) / float(_resolution.z),                        
-//                        1
-//                        );
-//                }
-//                return col;
-//#else
-//                clip(-1);
-//#endif
-//                return fixed4(0 ,0 ,0 ,0);
-//            }
-//            
-//            ENDCG
-//        }
+        Pass {
+            cull back
+            CGPROGRAM
+            #pragma enable_d3d11_debug_symbols
+            #pragma multi_compile_local _ VOXEL_MESH
+            #pragma target 5.0
+            #pragma vertex vert
+            // #pragma geometry geom
+            #pragma fragment frag
+
+            #include "UnityCG.cginc"
+
+            struct appdata
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct v2g
+            {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct g2f
+            {
+                float4 vertex : SV_POSITION;
+                float4 wordPos : TEXCOORD1;
+                float2 uv : TEXCOORD0;
+            };
+
+            sampler2D _MainTex;
+            float4 _MainTex_ST;
+            
+            g2f vert(appdata i)
+            {
+                g2f o;
+                o.vertex = UnityObjectToClipPos(i.vertex);
+                o.uv = TRANSFORM_TEX(i.uv, _MainTex);
+                o.wordPos = mul(unity_ObjectToWorld, i.vertex);
+                return o;
+            }
+
+            fixed4 _Color;
+            uniform RWTexture3D<uint> _voxelBuffer : register(u1);
+            SamplerState LinearSampler;
+            float3 _sceneMinAABB;
+            float3 _resolution;
+            float _step;
+            
+            fixed4 frag(g2f i) : SV_Target
+            {
+                int x = clamp(int((i.wordPos.x - _sceneMinAABB.x) / _step), 0, _resolution.x - 1);
+                int y = clamp(int((i.wordPos.y - _sceneMinAABB.y) / _step), 0, _resolution.y - 1);
+                int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
+
+                const uint3 index = uint3(x, y, z);
+                const int voxelValue = (_voxelBuffer[index]);
+
+                fixed4 col = fixed4(1, 1, 1, 1);
+                if (voxelValue >= 1)
+                {
+                    col = fixed4(
+                        float(x) / float(_resolution.x),
+                        float(y) / float(_resolution.y),
+                        float(z) / float(_resolution.z),                        
+                        1
+                        );
+                }
+                
+                return col;
+            }
+            
+            ENDCG
+        }
     }
 }

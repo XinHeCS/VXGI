@@ -1,14 +1,15 @@
 using System;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
-using UnityEngine.Serialization;
 using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(MeshFilter))]
 public class VoxelRenderer : MonoBehaviour
 {
-    public bool _showDebugVoxelColor = true;
+    public bool _showVoxels = true;
+
+    public Material _voxelMaterial;
     
     private Mesh _mesh;
 
@@ -20,7 +21,7 @@ public class VoxelRenderer : MonoBehaviour
     
     private Voxelization _voxelization;
 
-    private bool GenerateVoxelMesh => _showDebugVoxelColor && _voxelGo == null;
+    private bool GenerateVoxelMesh => _showVoxels && _voxelGo == null;
 
     // Start is called before the first frame update
     void Start()
@@ -36,6 +37,22 @@ public class VoxelRenderer : MonoBehaviour
         _mesh = _meshFilter.sharedMesh;
         
         _voxelization.AddVoxelObjects(this);
+    }
+
+    public void ShowVoxelMesh()
+    {
+        if (GenerateVoxelMesh)
+        {
+            BuildVoxelMesh();
+        }
+        else
+        {
+            if (_voxelGo)
+            {
+                // _voxelGo.SetActive(false);
+                // _meshRenderer.enabled = true;
+            }
+        }
     }
 
     public Bounds GetAABB()
@@ -59,5 +76,16 @@ public class VoxelRenderer : MonoBehaviour
         }
     }
 
-    public Mesh voxelMesh { get; set; }
+    private void BuildVoxelMesh()
+    {
+        _voxelGo = new GameObject("Voxel mesh");
+
+        var meshFilter = _voxelGo.AddComponent<MeshFilter>();
+        meshFilter.mesh = _voxelization.GetVoxelMesh(this);
+        var meshRenderer = _voxelGo.AddComponent<MeshRenderer>();
+        meshRenderer.material = _voxelMaterial;
+
+        _meshRenderer.enabled = false;
+        _voxelGo.transform.SetParent(transform);
+    }
 }
