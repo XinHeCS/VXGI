@@ -3,7 +3,10 @@ Shader "Unlit/Voxelization"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
-        _Color ("Color", Color) = (1, 1, 1, 1)
+        _roughness ("Roughness", Range(0, 1)) = 0.5
+        _metallic ("Metallic", Range(0, 1)) = 0.5
+        _emissive ("Emissive", Color) = (0, 0, 0, 1)
+        _intensity ("Intensity", Range(0, 255)) = 0
     }
     SubShader
     {
@@ -26,24 +29,29 @@ Shader "Unlit/Voxelization"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
+            #include "inter_avg.cginc"
+            #include "pbr.cginc"
 
             struct appdata
             {
                 float4 vertex : POSITION;
+                float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
             };
 
             struct v2g
             {
                 float4 vertex : POSITION;
+                float3 normal : NORMAL;
                 float2 uv : TEXCOORD0;
             };
 
             struct g2f
             {
                 float4 vertex : SV_POSITION;
-                float4 wordPos : TEXCOORD1;
                 float2 uv : TEXCOORD0;
+                float4 wordPos : TEXCOORD1;
+                float3 worldNormal : TEXCOORD2;
             };
 
             sampler2D _MainTex;
@@ -53,6 +61,7 @@ Shader "Unlit/Voxelization"
             {
                 v2g o;
                 o.vertex = mul(unity_ObjectToWorld, v.vertex);
+                o.normal = UnityObjectToWorldDir(v.normal.xyz);
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 return o;
             }
@@ -91,6 +100,7 @@ Shader "Unlit/Voxelization"
                 {
                     g2f o;
                     o.wordPos = IN[i].vertex;
+                    o.worldNormal = IN[i].normal;
                     o.vertex = mul(_viewProject[index], IN[i].vertex);
                     o.uv = IN[i].uv;
                     OUT.Append(o);
@@ -103,7 +113,14 @@ Shader "Unlit/Voxelization"
             float3 _resolution;
             float _step;
 
-            uniform RWTexture3D<uint> _voxelBuffer : register(u1);
+            uniform RWTexture3D<uint> _albedoBuffer : register(u1);
+            uniform RWTexture3D<uint> _normalBuffer : register(u2);
+            uniform RWTexture3D<uint> _emissiveBuffer : register(u3);
+            
+            float _roughness;
+            float _metallic;
+            float4 _emissive;
+            float _intensity;
             
             fixed4 frag (g2f i) : SV_Target
             {
@@ -112,19 +129,24 @@ Shader "Unlit/Voxelization"
                 int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
                 
                 uint3 index = uint3(x, y, z);
-                InterlockedOr(_voxelBuffer[index], 1);
-                
+                InterlockedOr(_albedoBuffer[index], 1);
+
+                float4 albedo = tex2D(_MainTex, i.uv);
+                albedo.a = 1.0;
+
+                float4 normal = float4(i.worldNormal, 1.0);
+
+                _emissive.rgb *= _intensity;
+                _emissive.a = 1.0;
+
+                InterlockedRGBA8Avg(_albedoBuffer, index, albedo);
+                InterlockedRGBA8Avg(_normalBuffer, index, normal);
+                InterlockedRGBA8Avg(_emissiveBuffer, index, _emissive);
+                                            
                 // sample the texture
                 // fixed4 col = float4(0, 0, 0, 0);
                 // clip(-1);
-                fixed4 col = float4(1, 1, 1, 1);
-                col = fixed4(
-                    float(x) / float(_resolution.x),
-                    float(y) / float(_resolution.y),
-                    float(z) / float(_resolution.z),
-                    1
-                    );                
-                return col;
+                return fixed4(1, 1, 1, 1);
             }
             ENDCG
         }
@@ -141,6 +163,8 @@ Shader "Unlit/Voxelization"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
+            #include "inter_avg.cginc"
+            #include "pbr.cginc"
 
             struct appdata
             {
@@ -172,9 +196,10 @@ Shader "Unlit/Voxelization"
                 o.wordPos = mul(unity_ObjectToWorld, i.vertex);
                 return o;
             }
-
-            fixed4 _Color;
-            uniform RWTexture3D<uint> _voxelBuffer : register(u1);
+            
+            uniform RWTexture3D<uint> _albedoBuffer : register(u1);
+            uniform RWTexture3D<uint> _normalBuffer : register(u2);
+            uniform RWTexture3D<uint> _emissiveBuffer : register(u3);
             SamplerState LinearSampler;
             float3 _sceneMinAABB;
             float3 _resolution;
@@ -187,23 +212,41 @@ Shader "Unlit/Voxelization"
                 int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
 
                 const uint3 index = uint3(x, y, z);
-                const int voxelValue = (_voxelBuffer[index]);
-
-                fixed4 col = fixed4(1, 1, 1, 1);
-                if (voxelValue >= 1)
-                {
-                    col = fixed4(
-                        float(x) / float(_resolution.x),
-                        float(y) / float(_resolution.y),
-                        float(z) / float(_resolution.z),                        
-                        1
-                        );
-                }
+                const fixed4 voxelValue = convRGBA8ToVec4(_albedoBuffer[index]) / 255.0;
                 
-                return col;
+                return voxelValue;
             }
             
             ENDCG
         }
     }
 }
+
+//                float3 F0 = lerp( float3(0.04, 0.04, 0.04), albedo.rgb, _metallic);
+//                float3 Lo = float3(0.0, 0.0, 0.0);
+//
+//                float3 N = normalize(i.worldNormal);
+//
+//                float3 L = _sunDir;
+//                float3 V = normalize(_WorldSpaceCameraPos - i.worldNormal);
+//                float3 H = normalize( V + L );
+//
+//                float NdotL = max( dot( N, L ), 0.0 );
+//                float NdotH = max( dot( N, H ), 0.0 );
+//                float NdotV = max( dot( N, V ), 0.0 );
+//
+//                // cook-torrance brdf
+//                float NDF = distributionGGX( NdotH, _roughness );
+//                float G = geometrySmith( NdotV, NdotL, _roughness );
+//                float3 F = fresnelSchlick( clamp( dot( H, V ), 0.0, 1.0 ), F0 );
+//
+//                float3 nom = NDF * G * F;
+//                float denom = 4 * NdotV * NdotL;
+//
+//                float3 specular = nom / max( denom, 0.001 );
+//
+//                float3 kS = F;
+//                float3 kD = float3(1, 1, 1) - kS;
+//                kD *= 1.0 - _metallic;
+//                
+//                Lo += ( kD * albedo.rgb / PI + specular ) * _sunIntensity * NdotL;

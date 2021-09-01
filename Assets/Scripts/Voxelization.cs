@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Net.Http.Headers;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
@@ -22,7 +22,11 @@ public class Voxelization : MonoBehaviour
 
     private int _length;
 
-    private RenderTexture _voxelVolumeBuffer;
+    private RenderTexture _albedoBuffer;
+    
+    private RenderTexture _normalBuffer;
+    
+    private RenderTexture _emissiveBuffer;
 
     private int[] _data;
 
@@ -30,16 +34,26 @@ public class Voxelization : MonoBehaviour
     
     private List<VoxelRenderer> _objs = new List<VoxelRenderer>();
 
+    private Light _directionalLight;
+
+    private Camera _camera;
+
     private int _voxelStepID = Shader.PropertyToID("_step");
     private int _resolutionID = Shader.PropertyToID("_resolution");
-    private int _voxelBufferID = Shader.PropertyToID("_voxelBuffer");
+    private int _aledoBufferID = Shader.PropertyToID("_albedoBuffer");
+    private int _normalBufferID = Shader.PropertyToID("_normalBuffer");
+    private int _emissiveBufferID = Shader.PropertyToID("_emissiveBuffer");
     private int _sceneBoundsMinID = Shader.PropertyToID("_sceneMinAABB");
     private int _sceneBoundsMaxID = Shader.PropertyToID("_sceneMaxAABB");
     private int _voxelPlaneID = Shader.PropertyToID("_viewProject");
+    private int _diretionLightID = Shader.PropertyToID("_sunDir");
+    private int _cameraPosID = Shader.PropertyToID("_cameraPos");
 
     private void Start()
     {
         // _mainCamera = GetComponent<Camera>();
+        _directionalLight = GameObject.Find("Directional Light").GetComponent<Light>();
+        _camera = Camera.current;
     }
 
     private void Update()
@@ -210,29 +224,47 @@ public class Voxelization : MonoBehaviour
         {
             var material = obj.sharedMaterial;
             material.SetMatrixArray(_voxelPlaneID, cameraMat);
-            material.SetTexture(_voxelBufferID, _voxelVolumeBuffer);
+            material.SetTexture(_aledoBufferID, _albedoBuffer);
+            material.SetTexture(_normalBufferID, _normalBuffer);
+            material.SetTexture(_emissiveBufferID, _emissiveBuffer);
         }
     }
 
     private void UpdateVoxelBuffer(int length)
     {
-        // _voxelBuffer?.Release();
-        // _voxelBuffer = new ComputeBuffer(length, sizeof(int), ComputeBufferType.Structured);
-        // Graphics.ClearRandomWriteTargets();
-        // Graphics.SetRandomWriteTarget(1, _voxelBuffer,false);
-        // var testList = new List<int>(length);  
-        // _voxelBuffer.SetData(new List<int>(length));
-        if (_voxelVolumeBuffer == null)
+        if (_albedoBuffer == null)
         {
-            _voxelVolumeBuffer =
+            _albedoBuffer =
                 new RenderTexture(_resolution.x, _resolution.y, 0, RenderTextureFormat.ARGB32);
-            _voxelVolumeBuffer.dimension = TextureDimension.Tex3D;
-            _voxelVolumeBuffer.volumeDepth = _resolution.z;
-            _voxelVolumeBuffer.enableRandomWrite = true;
-            _voxelVolumeBuffer.Create();
+            _albedoBuffer.dimension = TextureDimension.Tex3D;
+            _albedoBuffer.volumeDepth = _resolution.z;
+            _albedoBuffer.enableRandomWrite = true;
+            _albedoBuffer.Create();
+        }
+
+        if (_normalBuffer == null)
+        {
+            _normalBuffer =
+                new RenderTexture(_resolution.x, _resolution.y, 0, RenderTextureFormat.ARGB32);
+            _normalBuffer.dimension = TextureDimension.Tex3D;
+            _normalBuffer.volumeDepth = _resolution.z;
+            _normalBuffer.enableRandomWrite = true;
+            _normalBuffer.Create();
+        }
+        
+        if (_emissiveBuffer == null)
+        {
+            _emissiveBuffer =
+                new RenderTexture(_resolution.x, _resolution.y, 0, RenderTextureFormat.ARGB32);
+            _emissiveBuffer.dimension = TextureDimension.Tex3D;
+            _emissiveBuffer.volumeDepth = _resolution.z;
+            _emissiveBuffer.enableRandomWrite = true;
+            _emissiveBuffer.Create();
         }
         
         Graphics.ClearRandomWriteTargets();
-        Graphics.SetRandomWriteTarget(1, _voxelVolumeBuffer);
+        Graphics.SetRandomWriteTarget(1, _albedoBuffer);
+        Graphics.SetRandomWriteTarget(2, _normalBuffer);
+        Graphics.SetRandomWriteTarget(3, _emissiveBuffer);
     }
 }
