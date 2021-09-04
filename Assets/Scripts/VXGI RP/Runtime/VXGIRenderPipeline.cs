@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+using VXGI_RP.Runtime;
 
 public class VXGIRenderPipeline : RenderPipeline
 {

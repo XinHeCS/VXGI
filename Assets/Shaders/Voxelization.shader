@@ -129,7 +129,7 @@ Shader "Unlit/Voxelization"
                 int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
                 
                 uint3 index = uint3(x, y, z);
-                InterlockedOr(_albedoBuffer[index], 1);
+                // InterlockedOr(_albedoBuffer[index], 1);
 
                 float4 albedo = tex2D(_MainTex, i.uv);
                 albedo.a = 1.0;
@@ -139,9 +139,9 @@ Shader "Unlit/Voxelization"
                 _emissive.rgb *= _intensity;
                 _emissive.a = 1.0;
 
-                InterlockedRGBA8Avg(_albedoBuffer, index, albedo);
+                // InterlockedRGBA8Avg(_albedoBuffer, index, albedo);
                 InterlockedRGBA8Avg(_normalBuffer, index, normal);
-                InterlockedRGBA8Avg(_emissiveBuffer, index, _emissive);
+                // InterlockedRGBA8Avg(_emissiveBuffer, index, _emissive);
                                             
                 // sample the texture
                 // fixed4 col = float4(0, 0, 0, 0);
@@ -212,9 +212,10 @@ Shader "Unlit/Voxelization"
                 int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
 
                 const uint3 index = uint3(x, y, z);
-                const fixed4 voxelValue = convRGBA8ToVec4(_albedoBuffer[index]) / 255.0;
+                // const fixed4 voxelValue = fixed4(1, 1, 1, 1);
+                const fixed4 voxelValue = convRGBA8ToVec4(_normalBuffer[index]) / 255.0;
                 
-                return voxelValue;
+                return fixed4(voxelValue.rgb, 1);
             }
             
             ENDCG
