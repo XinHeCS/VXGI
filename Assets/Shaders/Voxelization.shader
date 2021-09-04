@@ -16,7 +16,7 @@ Shader "Unlit/Voxelization"
         // Calculate voxel data
         Pass
         {
-            Tags {"LightMode" = "Voxelization"}
+//            Tags {"LightMode" = "Voxelization"}
             cull off
             zwrite off
             colorMask 0
@@ -139,8 +139,11 @@ Shader "Unlit/Voxelization"
                 _emissive.rgb *= _intensity;
                 _emissive.a = 1.0;
 
+                uint ori;
+                uint newVal = convVec4ToRGBA8(albedo * 255.0);
                 // InterlockedRGBA8Avg(_albedoBuffer, index, albedo);
-                InterlockedRGBA8Avg(_normalBuffer, index, normal);
+                InterlockedExchange(_albedoBuffer[index], newVal, ori);
+                // InterlockedRGBA8Avg(_normalBuffer, index, normal);
                 // InterlockedRGBA8Avg(_emissiveBuffer, index, _emissive);
                                             
                 // sample the texture
@@ -152,74 +155,74 @@ Shader "Unlit/Voxelization"
         }
         
         // Render geometry
-        Pass {
-            cull back
-            CGPROGRAM
-            #pragma enable_d3d11_debug_symbols
-            #pragma multi_compile_local _ VOXEL_MESH
-            #pragma target 5.0
-            #pragma vertex vert
-            // #pragma geometry geom
-            #pragma fragment frag
-
-            #include "UnityCG.cginc"
-            #include "inter_avg.cginc"
-            #include "pbr.cginc"
-
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-
-            struct v2g
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-
-            struct g2f
-            {
-                float4 vertex : SV_POSITION;
-                float4 wordPos : TEXCOORD1;
-                float2 uv : TEXCOORD0;
-            };
-
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
-            
-            g2f vert(appdata i)
-            {
-                g2f o;
-                o.vertex = UnityObjectToClipPos(i.vertex);
-                o.uv = TRANSFORM_TEX(i.uv, _MainTex);
-                o.wordPos = mul(unity_ObjectToWorld, i.vertex);
-                return o;
-            }
-            
-            uniform RWTexture3D<uint> _albedoBuffer : register(u1);
-            uniform RWTexture3D<uint> _normalBuffer : register(u2);
-            uniform RWTexture3D<uint> _emissiveBuffer : register(u3);
-            SamplerState LinearSampler;
-            float3 _sceneMinAABB;
-            float3 _resolution;
-            float _step;
-            
-            fixed4 frag(g2f i) : SV_Target
-            {
-                int x = clamp(int((i.wordPos.x - _sceneMinAABB.x) / _step), 0, _resolution.x - 1);
-                int y = clamp(int((i.wordPos.y - _sceneMinAABB.y) / _step), 0, _resolution.y - 1);
-                int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
-
-                const uint3 index = uint3(x, y, z);
-                // const fixed4 voxelValue = fixed4(1, 1, 1, 1);
-                const fixed4 voxelValue = convRGBA8ToVec4(_normalBuffer[index]) / 255.0;
-                
-                return fixed4(voxelValue.rgb, 1);
-            }
-            
-            ENDCG
-        }
+//        Pass {
+//            cull back
+//            CGPROGRAM
+//            #pragma enable_d3d11_debug_symbols
+//            #pragma multi_compile_local _ VOXEL_MESH
+//            #pragma target 5.0
+//            #pragma vertex vert
+//            // #pragma geometry geom
+//            #pragma fragment frag
+//
+//            #include "UnityCG.cginc"
+//            #include "inter_avg.cginc"
+//            #include "pbr.cginc"
+//
+//            struct appdata
+//            {
+//                float4 vertex : POSITION;
+//                float2 uv : TEXCOORD0;
+//            };
+//
+//            struct v2g
+//            {
+//                float4 vertex : POSITION;
+//                float2 uv : TEXCOORD0;
+//            };
+//
+//            struct g2f
+//            {
+//                float4 vertex : SV_POSITION;
+//                float4 wordPos : TEXCOORD1;
+//                float2 uv : TEXCOORD0;
+//            };
+//
+//            sampler2D _MainTex;
+//            float4 _MainTex_ST;
+//            
+//            g2f vert(appdata i)
+//            {
+//                g2f o;
+//                o.vertex = UnityObjectToClipPos(i.vertex);
+//                o.uv = TRANSFORM_TEX(i.uv, _MainTex);
+//                o.wordPos = mul(unity_ObjectToWorld, i.vertex);
+//                return o;
+//            }
+//            
+//            uniform RWTexture3D<uint> _albedoBuffer : register(u1);
+//            uniform RWTexture3D<uint> _normalBuffer : register(u2);
+//            uniform RWTexture3D<uint> _emissiveBuffer : register(u3);
+//            SamplerState LinearSampler;
+//            float3 _sceneMinAABB;
+//            float3 _resolution;
+//            float _step;
+//            
+//            fixed4 frag(g2f i) : SV_Target
+//            {
+//                int x = clamp(int((i.wordPos.x - _sceneMinAABB.x) / _step), 0, _resolution.x - 1);
+//                int y = clamp(int((i.wordPos.y - _sceneMinAABB.y) / _step), 0, _resolution.y - 1);
+//                int z = clamp(int((i.wordPos.z - _sceneMinAABB.z) / _step), 0, _resolution.z - 1);
+//
+//                const uint3 index = uint3(x, y, z);
+//                // const fixed4 voxelValue = fixed4(1, 1, 1, 1);
+//                float4 voxelValue = convRGBA8ToVec4(_albedoBuffer.Load(uint4(index, 0)));
+//                
+//                return fixed4(voxelValue.rgb, 1) / 255.0;
+//            }
+//            
+//            ENDCG
+//        }
     }
 }
 

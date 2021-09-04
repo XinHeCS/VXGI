@@ -1,27 +1,23 @@
 using System;
+using System.Net.Sockets;
+using TreeEditor;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
-using UnityEngine.UIElements;
+using UnityEngine.Rendering;
 using Debug = UnityEngine.Debug;
 
 [RequireComponent(typeof(MeshFilter))]
 public class VoxelRenderer : MonoBehaviour
 {
-    public bool _showVoxels = true;
+    public Material _debugMaterial;
 
-    public Material _voxelMaterial;
+    public Material _voxelizationMaterial;
     
-    private Mesh _mesh;
-
     private GameObject _voxelGo;
-
-    private MeshRenderer _meshRenderer;
 
     private MeshFilter _meshFilter;
     
     private Voxelization _voxelization;
-
-    private bool GenerateVoxelMesh => _showVoxels && _voxelGo == null;
 
     // Start is called before the first frame update
     void Start()
@@ -33,59 +29,33 @@ public class VoxelRenderer : MonoBehaviour
         }
 
         _meshFilter = GetComponent<MeshFilter>();
-        _meshRenderer = GetComponent<MeshRenderer>();
-        _mesh = _meshFilter.sharedMesh;
-        
-        _voxelization.AddVoxelObjects(this);
-    }
 
-    public void ShowVoxelMesh()
-    {
-        if (GenerateVoxelMesh)
-        {
-            BuildVoxelMesh();
-        }
-        else
-        {
-            if (_voxelGo)
-            {
-                // _voxelGo.SetActive(false);
-                // _meshRenderer.enabled = true;
-            }
-        }
+        _voxelization.AddVoxelObjects(this);
+
+        RenderPipelineManager.beginCameraRendering += OnBeforeCameraRender;
     }
 
     public Bounds GetAABB()
     {
-        return _meshRenderer.bounds;
+        return _meshFilter.mesh.bounds;
     }
 
-    public Material material
+    public Material Material => _voxelizationMaterial;
+    public Material sharedMaterial => _voxelizationMaterial;
+    public Mesh Mesh => _meshFilter.mesh;
+
+    private void OnBeforeCameraRender(ScriptableRenderContext content, Camera renderCamera)
     {
-        get
+        if (_debugMaterial != null)
         {
-            return _meshRenderer.material;
+            _voxelization.SetUpVoxelMaterial(_debugMaterial, true);
+            var tf = transform;
+            Graphics.DrawMesh(_meshFilter.mesh, tf.position, tf.rotation, _debugMaterial, 0);
         }
     }
 
-    public Material sharedMaterial
+    private void OnDestroy()
     {
-        get
-        {
-            return _meshRenderer.sharedMaterial;
-        }
-    }
-
-    private void BuildVoxelMesh()
-    {
-        _voxelGo = new GameObject("Voxel mesh");
-
-        var meshFilter = _voxelGo.AddComponent<MeshFilter>();
-        meshFilter.mesh = _voxelization.GetVoxelMesh(this);
-        var meshRenderer = _voxelGo.AddComponent<MeshRenderer>();
-        meshRenderer.material = _voxelMaterial;
-
-        _meshRenderer.enabled = false;
-        _voxelGo.transform.SetParent(transform);
+        RenderPipelineManager.beginCameraRendering -= OnBeforeCameraRender;
     }
 }

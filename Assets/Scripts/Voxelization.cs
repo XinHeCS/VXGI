@@ -1,26 +1,23 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
 [RequireComponent(typeof(Camera))]
 public class Voxelization : MonoBehaviour
 {
-    public float _voxelStepX = 0.5f;
-    
-    public float _voxelStepY = 0.5f;
-    
-    public float _voxelStepZ = 0.5f;
+    public float _voxelStep = 0.5f;
 
     public float _voxelPlaneOffset = 0.2f;
 
-    private Vector3Int _resolution;
+    private bool _voxelizeThisFrame = true;
 
-    private int _length;
+    private Vector3Int _resolution;
 
     private RenderTexture _albedoBuffer;
     
@@ -28,15 +25,13 @@ public class Voxelization : MonoBehaviour
     
     private RenderTexture _emissiveBuffer;
 
-    private int[] _data;
-
     private Bounds _sceneBounds = new Bounds();
+
+    private Matrix4x4[] _cameraMat = new Matrix4x4[3];
+
+    private VXGIRenderPipeline _curRenderPipeline; 
     
     private List<VoxelRenderer> _objs = new List<VoxelRenderer>();
-
-    private Light _directionalLight;
-
-    private Camera _camera;
 
     private int _voxelStepID = Shader.PropertyToID("_step");
     private int _resolutionID = Shader.PropertyToID("_resolution");
@@ -49,30 +44,44 @@ public class Voxelization : MonoBehaviour
     private int _diretionLightID = Shader.PropertyToID("_sunDir");
     private int _cameraPosID = Shader.PropertyToID("_cameraPos");
 
-    private void Start()
-    {
-        // _mainCamera = GetComponent<Camera>();
-        _directionalLight = GameObject.Find("Directional Light").GetComponent<Light>();
-        _camera = Camera.current;
-    }
-
     private void Update()
     {
-        if (UpdateVoxelParam())
-        {
-            UpdateVoxelCamera();
-        }
+        // if (_curRenderPipeline == null)
+        // {
+        //     _curRenderPipeline = RenderPipelineManager.currentPipeline as VXGIRenderPipeline;
+        // }
+        // if (UpdateVoxelParam())
+        // {
+        //     // _curRenderPipeline.RenderVoxelThisFrame = false;
+        //     // Graphics.
+        //     VoxelizeScene();
+        // }
         
+        if (_voxelizeThisFrame)
+        {
+            if (UpdateVoxelParam())
+            {
+                // _voxelizeThisFrame = false;
+                // Graphics.
+                VoxelizeScene();
+            }
+        }
+
         // ReadVoxelBuffer();
     }
 
-    private void OnPostRender()
+    private void OnDestroy()
     {
-        foreach (var obj in _objs)
-        {
-            obj.ShowVoxelMesh();
-        }
+        _albedoBuffer.Release();
+        _normalBuffer.Release();
+        _emissiveBuffer.Release();
+        _curRenderPipeline = null;
     }
+
+    public RenderTexture AlbedoTexture => _albedoBuffer;
+    public RenderTexture NormalTexture => _normalBuffer;
+    public Vector3Int GridResolution => _resolution;
+    public Bounds SceneBound => _sceneBounds;
 
     public void AddVoxelObjects(VoxelRenderer voxelRenderer)
     {
@@ -84,38 +93,35 @@ public class Voxelization : MonoBehaviour
         // BuildVoxelBuffer(voxelRenderer);
     }
 
-    public Mesh GetVoxelMesh(VoxelRenderer renderer)
+    private void VoxelizeScene()
     {
-        if (!_objs.Contains(renderer))
+        foreach (var voxelRenderer in _objs)
         {
-            Debug.LogError("Invalid voxel renderer");
-            return new Mesh();
+            var tf = voxelRenderer.transform;
+            SetUpVoxelMaterial(voxelRenderer.sharedMaterial);
+            Graphics.DrawMesh(voxelRenderer.Mesh, tf.position, tf.rotation, voxelRenderer.sharedMaterial, 0);
         }
-        
-        Bounds bound = renderer.GetAABB();
-        Vector3 range = bound.max - bound.min;
-        Vector3Int startIndex = new Vector3Int
-        {
-            x = (int)Mathf.Clamp((bound.min.x - _sceneBounds.min.x) / _voxelStepX, 0.0f, _resolution.x - 1),
-            y = (int)Mathf.Clamp((bound.min.y - _sceneBounds.min.y) / _voxelStepX, 0.0f, _resolution.y - 1),
-            z = (int)Mathf.Clamp((bound.min.z - _sceneBounds.min.z) / _voxelStepX, 0.0f, _resolution.z - 1)
-        };
-        Vector3Int endIndex = new Vector3Int
-        {
-            x = (int) Mathf.Clamp((bound.max.x - _sceneBounds.min.x) / _voxelStepX, 0.0f, _resolution.x - 1),
-            y = (int) Mathf.Clamp((bound.max.y - _sceneBounds.min.y) / _voxelStepX, 0.0f, _resolution.y - 1),
-            z = (int) Mathf.Clamp((bound.max.z - _sceneBounds.min.z) / _voxelStepX, 0.0f, _resolution.z - 1)
-        };
-
-        return VoxelMeshBuilder.CreateMesh(
-            this, startIndex, endIndex, new Vector3(_voxelStepX, _voxelStepY, _voxelStepZ), _sceneBounds.min
-            );
     }
 
-    public int GetVoxelValue(int x, int y, int z)
+    public void SetUpVoxelMaterial(Material mat, bool isDebug = false)
     {
-        int index = (int)(y * _resolution.x * _resolution.z + z * _resolution.x + x);
-        return _data[index];
+        Graphics.ClearRandomWriteTargets();
+        if (true)
+        {
+            Graphics.SetRandomWriteTarget(1, _albedoBuffer);
+            Graphics.SetRandomWriteTarget(2, _normalBuffer);
+            Graphics.SetRandomWriteTarget(3, _emissiveBuffer);
+        }
+        
+        mat.SetTexture(_aledoBufferID, _albedoBuffer);
+        mat.SetTexture(_normalBufferID, _normalBuffer);
+        mat.SetTexture(_emissiveBufferID, _emissiveBuffer);
+        
+        mat.SetFloat(_voxelStepID, _voxelStep);
+        mat.SetMatrixArray(_voxelPlaneID, _cameraMat);
+        mat.SetVector(_sceneBoundsMinID, _sceneBounds.min);
+        mat.SetVector(_sceneBoundsMaxID, _sceneBounds.max);
+        mat.SetVector(_resolutionID, new Vector3(_resolution.x, _resolution.y, _resolution.z));
     }
 
     private bool UpdateVoxelParam()
@@ -124,7 +130,16 @@ public class Voxelization : MonoBehaviour
         {
             return false;
         }
+        
+        UpdateBasicSceneInfo();
+        UpdateVoxelBuffer();
+        UpdateVoxelCamera();
 
+        return true;
+    }
+
+    private void UpdateBasicSceneInfo()
+    {
         _sceneBounds = _objs[0].GetAABB();
         foreach (var obj in _objs)
         {
@@ -135,23 +150,9 @@ public class Voxelization : MonoBehaviour
         Vector3 max = _sceneBounds.max;
         Vector3 range = max - min;
         _resolution = Vector3Int.zero;
-        _resolution.x = (int) (range.x / _voxelStepX) + 1;
-        _resolution.y = (int) (range.y / _voxelStepY) + 1;
-        _resolution.z = (int) (range.z / _voxelStepZ) + 1;  
-        _length = (int)(_resolution.x * _resolution.y * _resolution.z);
-        
-        UpdateVoxelBuffer(_length);
-
-        foreach (var obj in _objs)
-        {
-            var material = obj.sharedMaterial;
-            material.SetFloat(_voxelStepID, _voxelStepX);
-            material.SetVector(_sceneBoundsMinID, _sceneBounds.min);
-            material.SetVector(_sceneBoundsMaxID, _sceneBounds.max);
-            material.SetVector(_resolutionID, new Vector3(_resolution.x, _resolution.y, _resolution.z));
-        }
-
-        return true;
+        _resolution.x = (int) (range.x / _voxelStep) + 1;
+        _resolution.y = (int) (range.y / _voxelStep) + 1;
+        _resolution.z = (int) (range.z / _voxelStep) + 1;
     }
 
     private void UpdateVoxelCamera()
@@ -159,7 +160,7 @@ public class Voxelization : MonoBehaviour
         Vector3 min = _sceneBounds.min;
         Vector3 max = _sceneBounds.max;
         Vector3 range = max - min;
-        Matrix4x4[] cameraMat = new Matrix4x4[3];
+        _cameraMat = new Matrix4x4[3];
 
         // X-Y plane
         var lookFrom = new Vector3((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f, max.z + _voxelPlaneOffset);
@@ -180,7 +181,7 @@ public class Voxelization : MonoBehaviour
         orthoMat.SetColumn(2, thirdCol);
         // print(orthoMat);
         orthoMat = GL.GetGPUProjectionMatrix(orthoMat, false);
-        cameraMat[0] = orthoMat * viewMat;
+        _cameraMat[0] = orthoMat * viewMat;
         
         // Y-Z plane
         lookFrom = new Vector3(max.x + _voxelPlaneOffset, (min.y + max.y) * 0.5f, (min.z + max.z) * 0.5f);
@@ -199,7 +200,7 @@ public class Voxelization : MonoBehaviour
         thirdCol *= -1;
         orthoMat.SetColumn(2, thirdCol);
         orthoMat = GL.GetGPUProjectionMatrix(orthoMat, false);
-        cameraMat[1] = orthoMat * viewMat;
+        _cameraMat[1] = orthoMat * viewMat;
         
         // Z-X plane
         lookFrom = new Vector3((min.x + max.x) * 0.5f, max.y + _voxelPlaneOffset, (min.z + max.z) * 0.5f);
@@ -218,19 +219,10 @@ public class Voxelization : MonoBehaviour
         thirdCol *= -1;
         orthoMat.SetColumn(2, thirdCol);
         orthoMat = GL.GetGPUProjectionMatrix(orthoMat, false);
-        cameraMat[2] = orthoMat * viewMat;
-        
-        foreach (var obj in _objs)
-        {
-            var material = obj.sharedMaterial;
-            material.SetMatrixArray(_voxelPlaneID, cameraMat);
-            material.SetTexture(_aledoBufferID, _albedoBuffer);
-            material.SetTexture(_normalBufferID, _normalBuffer);
-            material.SetTexture(_emissiveBufferID, _emissiveBuffer);
-        }
+        _cameraMat[2] = orthoMat * viewMat;
     }
 
-    private void UpdateVoxelBuffer(int length)
+    private void UpdateVoxelBuffer()
     {
         if (_albedoBuffer == null)
         {
@@ -261,10 +253,5 @@ public class Voxelization : MonoBehaviour
             _emissiveBuffer.enableRandomWrite = true;
             _emissiveBuffer.Create();
         }
-        
-        Graphics.ClearRandomWriteTargets();
-        Graphics.SetRandomWriteTarget(1, _albedoBuffer);
-        Graphics.SetRandomWriteTarget(2, _normalBuffer);
-        Graphics.SetRandomWriteTarget(3, _emissiveBuffer);
     }
 }

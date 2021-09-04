@@ -13,7 +13,7 @@ namespace VXGI_RP.Runtime
             new ShaderTagId("Voxelization"),
             new ShaderTagId("SRPDefaultUnlit")
         };
-    
+
         ScriptableRenderContext _context;
 
         Camera _camera;
@@ -71,12 +71,8 @@ namespace VXGI_RP.Runtime
         {
             var sortSetting = new SortingSettings(_camera);
             var settings = new DrawingSettings(
-                _shaderTagIdList[0], sortSetting
+                _shaderTagIdList[1], sortSetting
             );
-            for (int i = 1; i < _shaderTagIdList.Length; i++)
-            {
-                settings.SetShaderPassName(i, _shaderTagIdList[i]);
-            }
 
             return settings;  
         }

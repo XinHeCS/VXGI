@@ -12,6 +12,7 @@ public class VXGIRenderPipeline : RenderPipeline
     {
         foreach (var camera in cameras)
         {
+            BeginCameraRendering(context, camera);
             _cameraRenderer.Render(context, camera);
             EndCameraRendering(context, camera);
         }

@@ -205,8 +205,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showVoxels: 1
-  _voxelMaterial: {fileID: 0}
+  _debugMaterial: {fileID: 0}
+  _voxelizationMaterial: {fileID: 0}
 --- !u!1 &309206163
 GameObject:
   m_ObjectHideFlags: 0
@@ -239,8 +239,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showVoxels: 1
-  _voxelMaterial: {fileID: 0}
+  _debugMaterial: {fileID: 0}
+  _voxelizationMaterial: {fileID: 0}
 --- !u!136 &309206165
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -489,8 +489,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
-  m_LocalRotation: {x: 0.10208522, y: -0.77265507, z: 0.12867656, w: 0.6132089}
-  m_LocalPosition: {x: -3.3642166, y: 0.56126094, z: 0.3721056}
+  m_LocalRotation: {x: -0.05014324, y: -0.9017458, z: 0.108704716, w: -0.4153594}
+  m_LocalPosition: {x: -1.2785925, y: 0.41171333, z: 1.0934778}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -508,9 +508,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27b12ca87cf23e14eb2ff7a05ffbca96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _voxelStepX: 0.1
-  _voxelStepY: 0.1
-  _voxelStepZ: 0.1
+  _voxelStep: 0.1
   _voxelPlaneOffset: 0.2
 --- !u!114 &963194230
 MonoBehaviour:
@@ -561,8 +559,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showVoxels: 1
-  _voxelMaterial: {fileID: 0}
+  _debugMaterial: {fileID: 0}
+  _voxelizationMaterial: {fileID: 0}
 --- !u!136 &1374829760
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -726,8 +724,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showVoxels: 1
-  _voxelMaterial: {fileID: 0}
+  _debugMaterial: {fileID: 0}
+  _voxelizationMaterial: {fileID: 0}
 --- !u!1 &1961419029
 GameObject:
   m_ObjectHideFlags: 0
@@ -738,7 +736,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1961419034}
   - component: {fileID: 1961419033}
-  - component: {fileID: 1961419032}
   - component: {fileID: 1961419031}
   - component: {fileID: 1961419030}
   m_Layer: 0
@@ -760,8 +757,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showVoxels: 1
-  _voxelMaterial: {fileID: 0}
+  _debugMaterial: {fileID: 2100000, guid: eec9e280b5507aa4eaf85f195c25f668, type: 2}
+  _voxelizationMaterial: {fileID: 2100000, guid: f7e6d5ce6750bb44ea8af4839659455a, type: 2}
 --- !u!65 &1961419031
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -775,47 +772,6 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &1961419032
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1961419029}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: f7e6d5ce6750bb44ea8af4839659455a, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!33 &1961419033
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -832,7 +788,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1961419029}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.96, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -870,8 +826,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a558b36aec7017043bf633152c287221, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _showVoxels: 1
-  _voxelMaterial: {fileID: 0}
+  _debugMaterial: {fileID: 0}
+  _voxelizationMaterial: {fileID: 0}
 --- !u!135 &2141815238
 SphereCollider:
   m_ObjectHideFlags: 0
